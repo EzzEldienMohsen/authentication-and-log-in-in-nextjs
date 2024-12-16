@@ -1,5 +1,4 @@
 'use client';
-
 import { signup } from '@/actions/authActions';
 import Link from 'next/link';
 import { useFormState } from 'react-dom';

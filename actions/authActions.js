@@ -1,4 +1,5 @@
 'use server';
+import { createAuthSession } from '@/lib/auth';
 import { hashUserPassword } from '@/lib/hash';
 import { createUser } from '@/lib/user';
 import { redirect } from 'next/navigation';
@@ -12,7 +13,7 @@ const SignupSchema = z.object({
     .min(8, { message: 'Password must have at least 8 characters' }),
 });
 
-export const signup = (prevState, formData) => {
+export const signup = async (prevState, formData) => {
   const email = formData.get('email');
   const password = formData.get('password');
   // Zod Validation
@@ -43,7 +44,9 @@ export const signup = (prevState, formData) => {
   const hashedPassword = hashUserPassword(password);
   //   Database Functionality
   try {
-    createUser(email, hashedPassword);
+    const id = createUser(email, hashedPassword);
+    await createAuthSession(id);
+    redirect('/training');
   } catch (error) {
     if (error?.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return {
@@ -54,5 +57,4 @@ export const signup = (prevState, formData) => {
     }
     throw error;
   }
-  redirect('/training');
 };
