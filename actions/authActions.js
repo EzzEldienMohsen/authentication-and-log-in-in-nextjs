@@ -1,7 +1,7 @@
 'use server';
 import { createAuthSession } from '@/lib/auth';
-import { hashUserPassword } from '@/lib/hash';
-import { createUser } from '@/lib/user';
+import { hashUserPassword, verifyPassword } from '@/lib/hash';
+import { createUser, getUserByEmail } from '@/lib/user';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
@@ -56,5 +56,40 @@ export const signup = async (prevState, formData) => {
       };
     }
     throw error;
+  }
+};
+
+export const login = async (prevState, formData) => {
+  const email = formData.get('email');
+  const password = formData.get('password');
+
+  const existingUser = getUserByEmail(email);
+  if (!existingUser) {
+    return {
+      errors: {
+        email: 'We could not authenticate user, Please check your credentials.',
+      },
+    };
+  }
+  const isValidPassword = verifyPassword(existingUser.password, password);
+  if (!isValidPassword) {
+    return {
+      errors: {
+        password:
+          'We could not authenticate user, Please check your credentials.',
+      },
+    };
+  }
+  await createAuthSession(existingUser.id);
+  redirect('/training');
+};
+
+export const auth = async (mode, prevState, formData) => {
+  if (mode === 'login') {
+    return login(prevState, formData);
+  } else if (mode === 'signup') {
+    return signup(prevState, formData);
+  } else {
+    return redirect('/');
   }
 };
